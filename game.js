@@ -9,9 +9,9 @@ const game = new Phaser.Game(config);
 let player, platforms, moveL = false, moveR = false, jumpA = false;
 
 function preload() {
-    // ЗАГРУЗКА ТВОИХ ФАЙЛОВ
-    this.load.image('sky', 'sky.png'); // Твоё новое небо
-    // Если ты уже загрузил другие файлы, они тоже подхватятся:
+    // 1. Грузим небо. Убедись, что файл в GitHub называется sky.png
+    this.load.image('sky', 'sky.png');
+    // Другие ассеты (если есть)
     this.load.image('ball', 'ball.png');
     this.load.image('ground', 'ground.png');
 }
@@ -19,24 +19,31 @@ function preload() {
 function create() {
     let groundWidth = 5000;
 
-    // 1. ДОБАВЛЯЕМ НЕБО (Оно будет бесконечным)
-    // tileSprite заставляет картинку повторяться, если уровень длинный
-    this.add.tileSprite(0, 0, groundWidth, 720, 'sky').setOrigin(0, 0).setScrollFactor(0.5);
-
-    // 2. ИГРОК (Если ball.png нет, создаем временный красный шар)
-    if (this.textures.exists('ball')) {
-        player = this.physics.add.sprite(200, 500, 'ball').setScale(0.8);
+    // 2. РИСУЕМ НЕБО
+    // Если файл sky.png загрузился, он растянется на весь экран
+    if (this.textures.exists('sky')) {
+        let sky = this.add.tileSprite(0, 0, 1280, 720, 'sky').setOrigin(0, 0).setScrollFactor(0);
+        // Растягиваем небо под размер экрана
+        sky.displayWidth = 1280;
+        sky.displayHeight = 720;
     } else {
+        // Если неба нет, будет хоть какой-то цвет, чтоб не чернота
+        this.cameras.main.setBackgroundColor('#4FA9FF');
+    }
+
+    // 3. ИГРОК
+    player = this.physics.add.sprite(200, 500, this.textures.exists('ball') ? 'ball' : null);
+    if (!this.textures.exists('ball')) {
+        // Если нет ball.png, рисуем временный шар
         let bG = this.make.graphics({x: 0, y: 0, add: false});
         bG.fillStyle(0xff3333).fillCircle(40, 40, 40).generateTexture('ball_temp', 80, 80);
-        player = this.physics.add.sprite(200, 500, 'ball_temp');
+        player.setTexture('ball_temp');
     }
-    
     player.setBounce(0.3).setCollideWorldBounds(true).setCircle(40);
     player.setDrag(950, 0); 
     player.setMaxVelocity(580, 1300);
 
-    // 3. ЗЕМЛЯ
+    // 4. ЗЕМЛЯ
     platforms = this.physics.add.staticGroup();
     if (this.textures.exists('ground')) {
         let groundTile = this.add.tileSprite(groundWidth/2, 690, groundWidth, 140, 'ground');
@@ -50,7 +57,7 @@ function create() {
 
     this.physics.add.collider(player, platforms);
 
-    // КАМЕРА
+    // 5. КАМЕРА (Настраиваем, чтобы не было черных полос)
     this.cameras.main.setBounds(0, 0, groundWidth, 720);
     this.cameras.main.startFollow(player, true, 0.1, 0.1);
 
@@ -77,4 +84,5 @@ function update() {
         player.setVelocityY(-880);
         window.jumpA = false;
     }
-}
+                                          }
+        

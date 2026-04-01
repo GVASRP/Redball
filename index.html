@@ -3,26 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Red Ball 5</title>
+    <title>Red Ball 5: Sunrise</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser-arcade-physics.min.js"></script>
     <style>
         body { margin: 0; background: #000; overflow: hidden; touch-action: none; user-select: none; }
+        #game-container { width: 100vw; height: 100vh; }
+        
+        /* Управление поверх игры */
         #controls {
             position: absolute; bottom: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; z-index: 100;
+            pointer-events: none; z-index: 10;
         }
-        .touch-zone { pointer-events: auto; position: absolute; }
-        /* Зоны нажатия (прозрачные) */
-        #left-z { bottom: 20px; left: 20px; width: 140px; height: 120px; }
-        #right-z { bottom: 20px; left: 180px; width: 140px; height: 120px; }
-        #jump-z { bottom: 30px; right: 30px; width: 150px; height: 150px; }
+        .touch-zone { 
+            pointer-events: auto; position: absolute; 
+            background: rgba(255,255,255,0.05); /* Легкая заливка зоны */
+            border: 3px solid rgba(255,255,255,0.2); /* Контур */
+            color: rgba(255,255,255,0.6); font-size: 60px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        
+        /* Кнопки влево/вправо слева */
+        #left-z { bottom: 40px; left: 40px; width: 150px; height: 130px; border-radius: 20px; }
+        #right-z { bottom: 40px; left: 210px; width: 150px; height: 130px; border-radius: 20px; }
+        
+        /* Кнопка прыжка справа */
+        #jump-z { bottom: 50px; right: 50px; width: 160px; height: 160px; border-radius: 50%; font-size: 70px; }
     </style>
 </head>
 <body>
+    <div id="game-container"></div>
     <div id="controls">
-        <div id="left-z" class="touch-zone"></div>
-        <div id="right-z" class="touch-zone"></div>
-        <div id="jump-z" class="touch-zone"></div>
+        <div id="left-z" class="touch-zone">◀</div>
+        <div id="right-z" class="touch-zone">▶</div>
+        <div id="jump-z" class="touch-zone">▲</div>
     </div>
     <script src="game.js"></script>
 </body>

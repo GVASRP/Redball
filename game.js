@@ -1,79 +1,85 @@
 const config = {
     type: Phaser.AUTO,
-    scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: 800, height: 450 },
-    physics: { 
-        default: 'arcade', 
-        arcade: { gravity: { y: 1200 }, friction: 0.1, debug: false } 
-    },
+    scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: 1280, height: 720 },
+    physics: { default: 'arcade', arcade: { gravity: { y: 1600 }, debug: false } },
     scene: { preload: preload, create: create, update: update }
 };
 
 const game = new Phaser.Game(config);
-let player, platforms, moveLeft = false, moveRight = false, doJump = false;
+let player, platforms, moveL = false, moveR = false, jumpA = false;
 
-function preload() {}
+function preload() {} // Ничего не грузим извне, рисуем всё сами!
 
 function create() {
-    // Фон неба
-    this.add.graphics().fillGradientStyle(0x87CEEB, 0x87CEEB, 0xB0E2FF, 0xB0E2FF, 1).fillRect(0, 0, 800, 450);
+    // 1. КРАСИВОЕ НЕБО
+    let bg = this.add.graphics();
+    bg.fillGradientStyle(0x4FA9FF, 0x4FA9FF, 0xA6E0FF, 0xA6E0FF, 1);
+    bg.fillRect(0, 0, 1280, 720).setScrollFactor(0);
 
-    // Земля
+    // 2. РИСУЕМ КНОПКИ (как на фото)
+    let ui = this.add.graphics().setScrollFactor(0).setDepth(10);
+    ui.lineStyle(6, 0xffffff, 0.4);
+    // Кнопки влево/вправо
+    ui.strokeRoundedRect(40, 580, 100, 80, 20); 
+    ui.strokeRoundedRect(200, 580, 100, 80, 20);
+    // Прыжок
+    ui.strokeCircle(1150, 620, 60);
+
+    // 3. РИСУЕМ ШАР (С тенями и бликами)
+    let ballG = this.make.graphics({x: 0, y: 0, add: false});
+    ballG.fillStyle(0xff3333, 1); ballG.fillCircle(40, 40, 40); // Основа
+    ballG.fillStyle(0xffffff, 1); ballG.fillCircle(25, 30, 8); ballG.fillCircle(55, 30, 8); // Глаза
+    ballG.fillStyle(0x000000, 1); ballG.fillCircle(25, 30, 4); ballG.fillCircle(55, 30, 4); // Зрачки
+    ballG.lineStyle(4, 0x000000, 0.8); ballG.beginPath(); ballG.arc(40, 45, 20, 0.1, Math.PI - 0.1, false); ballG.strokePath(); // Улыбка
+    ballG.generateTexture('ball', 80, 80);
+
+    player = this.physics.add.sprite(200, 500, 'ball');
+    player.setBounce(0.3).setCollideWorldBounds(true).setCircle(40);
+    player.setDrag(900, 0); // ИНЕРЦИЯ торможения
+    player.setMaxVelocity(550, 1200);
+
+    // 4. РИСУЕМ ЗЕМЛЮ
     platforms = this.physics.add.staticGroup();
-    let ground = this.add.rectangle(400, 430, 800, 40, 0x5e3a1f); 
-    this.add.rectangle(400, 412, 800, 12, 0x76c410); 
+    let ground = this.add.rectangle(2500, 700, 5000, 60, 0x5e3a1f); // Почва
+    let grass = this.add.rectangle(2500, 665, 5000, 15, 0x7cfc00); // Трава
     this.physics.add.existing(ground, true);
     platforms.add(ground);
 
-    // Рисуем Шар (сделаем его чуть больше и четче)
-    let graphics = this.make.graphics({x: 0, y: 0, add: false});
-    graphics.fillStyle(0xff2222, 1);
-    graphics.fillCircle(25, 25, 25);
-    graphics.fillStyle(0xffffff, 1);
-    graphics.fillCircle(17, 18, 6); graphics.fillCircle(33, 18, 6);
-    graphics.fillStyle(0x000000, 1);
-    graphics.fillCircle(17, 18, 3); graphics.fillCircle(33, 18, 3);
-    graphics.lineStyle(3, 0x000000, 0.8);
-    graphics.beginPath(); graphics.arc(25, 28, 12, 0.2, Math.PI - 0.2, false); graphics.strokePath();
-    graphics.generateTexture('playerBall', 50, 50);
-
-    player = this.physics.add.sprite(100, 300, 'playerBall');
-    player.setBounce(0.3);
-    player.setCollideWorldBounds(true);
-    player.setCircle(25);
-    
-    // Настройка инерции
-    player.setDragX(500); // Сопротивление (чтобы не катился вечно)
-    player.setMaxVelocity(350, 1000); // Макс скорость
-
     this.physics.add.collider(player, platforms);
-    setupMobileControls();
+
+    // Камера как в оригинале
+    this.cameras.main.setBounds(0, 0, 5000, 720);
+    this.cameras.main.startFollow(player, true, 0.1, 0.1);
+
+    setupControls();
 }
 
-function setupMobileControls() {
-    document.getElementById('left-btn').ontouchstart = () => moveLeft = true;
-    document.getElementById('left-btn').ontouchend = () => moveLeft = false;
-    document.getElementById('right-btn').ontouchstart = () => moveRight = true;
-    document.getElementById('right-btn').ontouchend = () => moveRight = false;
-    document.getElementById('jump-btn').ontouchstart = () => doJump = true;
-    document.getElementById('jump-btn').ontouchend = () => doJump = false;
+function setupControls() {
+    const bind = (id, action) => {
+        let el = document.getElementById(id);
+        el.ontouchstart = (e) => { e.preventDefault(); window[action] = true; };
+        el.ontouchend = (e) => { e.preventDefault(); window[action] = false; };
+    };
+    bind('left-z', 'moveL'); bind('right-z', 'moveR'); bind('jump-z', 'jumpA');
 }
 
 function update() {
-    const acceleration = 1200;
+    const power = 2200; // Мощность разгона
 
-    if (moveLeft) {
-        player.setAccelerationX(-acceleration);
-        player.angle -= 12;
-    } else if (moveRight) {
-        player.setAccelerationX(acceleration);
-        player.angle += 12;
+    if (window.moveL) {
+        player.setAccelerationX(-power);
+        player.angle -= 15;
+    } else if (window.moveR) {
+        player.setAccelerationX(power);
+        player.angle += 15;
     } else {
         player.setAccelerationX(0);
-        // Эффект затухания вращения
-        player.setAngularVelocity(player.body.velocity.x * 2);
+        player.setAngularVelocity(player.body.velocity.x * 1.8);
     }
 
-    if (doJump && player.body.touching.down) {
-        player.setVelocityY(-600);
+    if (window.jumpA && player.body.touching.down) {
+        player.setVelocityY(-850);
+        window.jumpA = false;
     }
-}
+                    }
+        
